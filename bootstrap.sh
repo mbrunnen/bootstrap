@@ -113,7 +113,10 @@ do_action() {
         esac
     done
 
+    section "Finish"
     success "Action \"$action\" successful"
+    echo "See the logs in $log_dir"
+    echo "See the backups in $backup_dir"
 }
 
 sync() {
@@ -135,9 +138,14 @@ gather() {
 deploy() {
     local loc=$1 # here
     local rem=$2 # there
-    [ -f $rem ] && mv "$rem" "$backup_dir/$(basename $rem)"
-    success "Created a backup for $rem in $backup_dir/$(basename $rem)"
-    rsync -av $loc $rem
+    local rem_bak="$backup_dir/$(basename $rem)"
+    local rem_dir="$(dirname $rem)"
+    [ -f $rem ] && mv $rem $rem_bak &&
+        success "Created a backup for $rem in $rem_bak"
+    [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
+        success "Created directory $rem_dir"
+    rsync -abv --backup-dir=$backup_dir $loc $rem
+    # rsync -av $loc $rem
     success "Deployed $loc to $rem"
 }
 
@@ -155,7 +163,7 @@ user () {
 }
 
 section () {
-    printf "\t\t=====   %b$1%b   =====\n" $bold $reset
+    printf "\n\t\t=====   %b$1%b   =====\n" $bold $reset
 }
 
 parse_action "$@"
