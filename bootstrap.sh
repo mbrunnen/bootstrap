@@ -134,6 +134,9 @@ do_action() {
 sync() {
     local loc=$1 # here
     local rem=$2 # there
+    local rem_dir="$(dirname $rem)"
+    [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
+        success "Created directory $rem_dir"
     # a = -rlptgoD, u = update via timestamp, hence -t is necessary
     eval "$sync_cmd $loc $rem"
     eval "$sync_cmd $rem $loc"
