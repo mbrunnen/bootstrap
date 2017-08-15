@@ -28,6 +28,9 @@ do_sync=true
 do_gather=true
 do_deploy=true
 action=
+sync_cmd='rsync -auv --no-D'
+gather_cmd='rsync -av'
+deploy_cmd="rsync -abv --backup-dir=$backup_dir"
 
 declare -A dests
 
@@ -57,6 +60,9 @@ parse_action() {
             d|-d|--deploy)
                 action=deploy
                 ;;
+            n|-n|--dryrun)
+                action=dryrun
+                ;;
             *)
                 # unknown option
                 ;;
@@ -75,6 +81,9 @@ parse_action() {
                 ;;
             d )
                 action=deploy
+                ;;
+            n )
+                action=dryrun
                 ;;
             * )
                 fail 'Quitting'
@@ -110,6 +119,9 @@ do_action() {
             deploy)
                 deploy "$src" "${dests[$src]}"
                 ;;
+            dryrun)
+                dryrun "$src" "${dests[$src]}"
+                ;;
         esac
     done
 
@@ -123,15 +135,15 @@ sync() {
     local loc=$1 # here
     local rem=$2 # there
     # a = -rlptgoD, u = update via timestamp, hence -t is necessary
-    rsync -auv --no-D $loc $rem
-    rsync -auv --no-D $rem $loc
+    eval "$sync_cmd $loc $rem"
+    eval "$sync_cmd $rem $loc"
     success "Synchronized $loc and $rem"
 }
 
 gather() {
     local loc=$1 # here
     local rem=$2 # there
-    rsync -av $rem $loc
+    eval "$gather_cmd $rem $loc"
     success "Gathered $rem to $loc"
 }
 
@@ -144,9 +156,19 @@ deploy() {
         success "Created a backup for $rem in $rem_bak"
     [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
         success "Created directory $rem_dir"
-    rsync -abv --backup-dir=$backup_dir $loc $rem
-    # rsync -av $loc $rem
+    eval "$deploy_cmd $loc $rem"
     success "Deployed $loc to $rem"
+}
+
+dryrun() {
+    local loc=$1 # here
+    local rem=$2 # there
+    if [ -f $loc ] || [ -d $loc ]; then
+        success "$loc found"
+    else
+        fail "$loc not found"
+    fi
+    echo -e "\tmove\t$loc\n\tto\t$rem\n"
 }
 
 success () {
