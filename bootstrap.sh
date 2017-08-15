@@ -143,7 +143,7 @@ sync() {
 gather() {
     local loc=$1 # here
     local rem=$2 # there
-    eval "$gather_cmd $rem $loc"
+    [ -e $rem ] && eval "$gather_cmd $rem $loc"
     success "Gathered $rem to $loc"
 }
 
@@ -163,7 +163,7 @@ deploy() {
 dryrun() {
     local loc=$1 # here
     local rem=$2 # there
-    if [ -f $loc ] || [ -d $loc ]; then
+    if [ -e $loc ]; then
         success "$loc found"
     else
         fail "$loc not found"
