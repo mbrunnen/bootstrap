@@ -134,12 +134,15 @@ do_action() {
 sync() {
     local loc=$1 # here
     local rem=$2 # there
+    local rem_bak="$backup_dir/$(basename $rem)"
     local rem_dir="$(dirname $rem)"
+    [ -f $rem ] && mv $rem $rem_bak &&
+        success "Created a backup for $rem in $rem_bak"
     [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
         success "Created directory $rem_dir"
     # a = -rlptgoD, u = update via timestamp, hence -t is necessary
     eval "$sync_cmd $loc $rem"
-    eval "$sync_cmd $rem $loc"
+    eval "$sync_cmd -b $rem $loc"
     success "Synchronized $loc and $rem"
 }
 
