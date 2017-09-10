@@ -6,7 +6,7 @@
 #          FILE: bootstrap.sh
 #         USAGE: ./bootstrap.sh
 #
-#   DESCRIPTION: bootrap the dotfiles.
+#   DESCRIPTION: boostrap the dotfiles.
 #
 #       No warranty! For nothing. Use it at your own risk.
 #===============================================================================
@@ -17,22 +17,27 @@ set -u
 red="\E[91m"
 green="\E[92m"
 yellow="\E[93m"
+blue="\E[94m"
+magenta="\E[95m"
+cyan="\E[96m"
 reset="\E[0m"
 bold="\E[1m"
 dot_root="$(cd $(dirname $0) && pwd)"
 log_dir="$dot_root/logs"
-backup_dir="$dot_root/backups"
+timestamp=$(date +"%s")
+# absolute or relative to destination dir
+backup_dir="/tmp/boostrap_backup_$timestamp"
 log_prefix="$log_dir/$(basename $0)"
-bs_file=".bs_file.sh"
 do_sync=true
 do_gather=true
 do_deploy=true
 action=
-sync_cmd='rsync -auv --no-D'
-gather_cmd='rsync -av'
-deploy_cmd="rsync -abv --backup-dir=$backup_dir"
-
-declare -A dests
+# a = -rlptgoD, u = update via timestamp, hence -t is necessary
+put_cmd="rsync -Cauv --no-D -b --backup-dir=$backup_dir"
+get_cmd='rsync -Cauv --no-D'
+gather_cmd='rsync -Cav'
+deploy_cmd="rsync -Cabv --backup-dir=$backup_dir"
+dest_dir=$HOME
 
 mkdir -p $log_dir $backup_dir
 #=================================== Logging ===================================
@@ -86,71 +91,77 @@ parse_action() {
                 action=dryrun
                 ;;
             * )
-                fail 'Quitting'
+                fail 'Quitting.'
                 ;;
         esac
     fi
-    success "Doing action \"$action\""
+    success "Doing action \"$action\"."
 }
 
 do_action() {
-    section 'Searching BS files'
-    local bs_files=$(realpath $(find -H . "$dot_root" -maxdepth 2\
-        -name "$bs_file" -not -path '.git') | sort -u)
-    for bs in ${bs_files[@]}; do
-        success "Found BS file in: $(dirname $bs)"
-        cd $(dirname $bs)
-        source $bs
+    section 'Searching dotfiles'
+    local src_dir="$dot_root/homedir"
+    local src_files=($(realpath $(git ls-tree -r HEAD --name-only -- $src_dir)))
+    declare -a dest_files=()
+    for sfile in ${src_files[@]}; do
+        declare dest_files+=(${sfile/$src_dir/$dest_dir})
     done
+
+    [ ${#src_files[@]} -eq ${#dest_files[@]} ] \
+        || fail 'Unequal source and destination files.'
 
     section "Action \"$action\""
     if [ -z $action ]; then
-        fail 'No Action'
+        fail 'No action.'
     fi
 
-    for src in "${!dests[@]}"; do
+    for (( i = 0; i < ${#src_files[@]}; i++ )); do
         case "$action" in
             sync)
-                sync "$src" "${dests[$src]}"
+                sync "${src_files[i]}" "${dest_files[i]}"
                 ;;
             gather)
-                gather "$src" "${dests[$src]}"
+                gather "${src_files[i]}" "${dest_files[i]}"
                 ;;
             deploy)
-                deploy "$src" "${dests[$src]}"
+                deploy "${src_files[i]}" "${dest_files[i]}"
                 ;;
             dryrun)
-                dryrun "$src" "${dests[$src]}"
+                dryrun "${src_files[i]}" "${dest_files[i]}"
                 ;;
         esac
     done
 
     section "Finish"
-    success "Action \"$action\" successful"
-    echo "See the logs in $log_dir"
-    echo "See the backups in $backup_dir"
+    success "Action \"$action\" successful."
+    echo "See the logs in $log_dir."
+    if [ -z "$(ls -A $backup_dir)" ]; then
+        success "No backups created in $backup_dir."
+    else
+        warning "Backups had to be created in $backup_dir. Please check:"
+        local backup_files=($(find $backup_dir -type f))
+        for bfile in ${backup_files[@]}; do
+            echo "$bfile"
+        done
+    fi
 }
 
 sync() {
     local loc=$1 # here
     local rem=$2 # there
-    local rem_bak="$backup_dir/$(basename $rem)"
     local rem_dir="$(dirname $rem)"
-    [ -f $rem ] && mv $rem $rem_bak &&
-        success "Created a backup for $rem in $rem_bak"
     [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
-        success "Created directory $rem_dir"
-    # a = -rlptgoD, u = update via timestamp, hence -t is necessary
-    eval "$sync_cmd $loc $rem"
-    eval "$sync_cmd -b $rem $loc"
-    success "Synchronized $loc and $rem"
+        success "Created directory $rem_dir."
+    eval "$put_cmd $loc $rem"
+    eval "$get_cmd $rem $loc"
+    success "Synchronized $loc and $rem."
 }
 
 gather() {
     local loc=$1 # here
     local rem=$2 # there
     [ -e $rem ] && eval "$gather_cmd $rem $loc"
-    success "Gathered $rem to $loc"
+    success "Gathered $rem to $loc."
 }
 
 deploy() {
@@ -158,8 +169,6 @@ deploy() {
     local rem=$2 # there
     local rem_bak="$backup_dir/$(basename $rem)"
     local rem_dir="$(dirname $rem)"
-    [ -f $rem ] && mv $rem $rem_bak &&
-        success "Created a backup for $rem in $rem_bak"
     [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
         success "Created directory $rem_dir"
     eval "$deploy_cmd $loc $rem"
@@ -172,7 +181,7 @@ dryrun() {
     if [ -e $loc ]; then
         success "$loc found"
     else
-        fail "$loc not found"
+        fail "$loc not found."
     fi
     echo -e "\tmove\t$loc\n\tto\t$rem\n"
 }
@@ -181,13 +190,17 @@ success () {
     printf "[%bOK%b] $1\n" $green $reset
 }
 
+warning () {
+    printf "[%bWARNING%b] $1\n" $yellow $reset
+}
+
 fail () {
     printf "[%bFAIL%b] $1\n" $red $reset
     exit
 }
 
 user () {
-    printf "[%bINPUT%b] $1\n" $yellow $reset
+    printf "[%bINPUT%b] $1\n" $cyan $reset
 }
 
 section () {
