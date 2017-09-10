@@ -22,9 +22,8 @@ magenta="\E[95m"
 cyan="\E[96m"
 reset="\E[0m"
 bold="\E[1m"
-dot_root="$(cd $(dirname $0) && pwd)"
-log_dir="$dot_root/logs"
 timestamp=$(date +"%s")
+log_dir="/tmp/boostrap_logs_$timestamp"
 # absolute or relative to destination dir
 backup_dir="/tmp/boostrap_backup_$timestamp"
 log_prefix="$log_dir/$(basename $0)"
@@ -52,6 +51,7 @@ exec 1> >(tee ${log_prefix}.out.log >&3)
 exec 2> >(tee ${log_prefix}.err.log >&4)
 
 parse_action() {
+    [ -z "$DOTFILES" ] && fail 'DOTFILES not set.'
     section 'User input'
     for i in "$@"
     do
@@ -100,11 +100,15 @@ parse_action() {
 
 do_action() {
     section 'Searching dotfiles'
-    local src_dir="$dot_root/homedir"
-    local src_files=($(realpath $(git ls-tree -r HEAD --name-only -- $src_dir)))
+    # cd because of realpath
+    cd $DOTFILES
+    local src_files=($(realpath $(git ls-tree -r HEAD --name-only\
+        -- $DOTFILES)))
+    cd $OLDPWD
+
     declare -a dest_files=()
     for sfile in ${src_files[@]}; do
-        declare dest_files+=(${sfile/$src_dir/$dest_dir})
+        declare dest_files+=(${sfile/$DOTFILES/$dest_dir})
     done
 
     [ ${#src_files[@]} -eq ${#dest_files[@]} ] \
@@ -140,9 +144,7 @@ do_action() {
     else
         warning "Backups had to be created in $backup_dir. Please check:"
         local backup_files=($(find $backup_dir -type f))
-        for bfile in ${backup_files[@]}; do
-            echo "$bfile"
-        done
+        printf '%s\n' "${backup_files[@]}"
     fi
 }
 
