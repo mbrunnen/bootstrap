@@ -93,20 +93,7 @@ do_action() {
         fail 'No action.'
     fi
 
-    case "$action" in
-        update)
-            update
-            ;;
-        gather)
-            gather
-            ;;
-        deploy)
-            deploy
-            ;;
-        add)
-            add
-            ;;
-    esac
+    eval $action
 
     section "Finish"
     success "Action \"$action\" successful."
@@ -143,6 +130,10 @@ add() {
         eval "$add_cmd $options $src $dest"
         success "Added $src to $dest"
     done
+}
+
+status() {
+    git -C $DOTFILES status
 }
 
 success () {
