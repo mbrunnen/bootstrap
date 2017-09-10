@@ -32,11 +32,12 @@ do_gather=true
 do_deploy=true
 action=
 # a = -rlptgoD, u = update via timestamp, hence -t is necessary
-put_cmd="rsync -Cauv --no-D -b --backup-dir=$backup_dir"
-get_cmd='rsync -Cauv --no-D'
-gather_cmd='rsync -Cav'
-deploy_cmd="rsync -Cabv --backup-dir=$backup_dir"
+put_cmd="rsync -Cau --no-D -b --backup-dir=$backup_dir"
+get_cmd='rsync -Cau --no-D --ignore-non-existing'
+gather_cmd='rsync -Ca --ignore-non-existing'
+deploy_cmd="rsync -Cab --backup-dir=$backup_dir"
 dest_dir=$HOME
+options='-v'
 
 mkdir -p $log_dir $backup_dir
 #=================================== Logging ===================================
@@ -50,7 +51,7 @@ exec 1> >(tee ${log_prefix}.out.log >&3)
 # Use tee to redirect fd 2 to logfile.err and to stderr
 exec 2> >(tee ${log_prefix}.err.log >&4)
 
-parse_action() {
+parse_args() {
     [ -z "$DOTFILES" ] && fail 'DOTFILES not set.'
     section 'User input'
     for i in "$@"
@@ -65,76 +66,31 @@ parse_action() {
             d|-d|--deploy)
                 action=deploy
                 ;;
-            n|-n|--dryrun)
-                action=dryrun
-                ;;
             *)
-                # unknown option
+                options+=" $i"
                 ;;
         esac
     done
-    if [ -z "$action" ]; then
-        user "What do you want to do: [s]ynchronize, [g]ather, [d]eploy or [Q]uit?"
-        read -n 1 input
-        echo
-        case "$input" in
-            s )
-                action=sync
-                ;;
-            g )
-                action=gather
-                ;;
-            d )
-                action=deploy
-                ;;
-            n )
-                action=dryrun
-                ;;
-            * )
-                fail 'Quitting.'
-                ;;
-        esac
-    fi
-    success "Doing action \"$action\"."
+    success "Doing action \"$action\" with options:\"$options\"."
 }
 
 do_action() {
-    section 'Searching dotfiles'
-    # cd because of realpath
-    cd $DOTFILES
-    local src_files=($(realpath $(git ls-tree -r HEAD --name-only\
-        -- $DOTFILES)))
-    cd $OLDPWD
-
-    declare -a dest_files=()
-    for sfile in ${src_files[@]}; do
-        declare dest_files+=(${sfile/$DOTFILES/$dest_dir})
-    done
-
-    [ ${#src_files[@]} -eq ${#dest_files[@]} ] \
-        || fail 'Unequal source and destination files.'
-
     section "Action \"$action\""
     if [ -z $action ]; then
         fail 'No action.'
     fi
 
-    for (( i = 0; i < ${#src_files[@]}; i++ )); do
-        case "$action" in
-            sync)
-                sync "${src_files[i]}" "${dest_files[i]}"
-                ;;
-            gather)
-                gather "${src_files[i]}" "${dest_files[i]}"
-                ;;
-            deploy)
-                deploy "${src_files[i]}" "${dest_files[i]}"
-                ;;
-            dryrun)
-                dryrun "${src_files[i]}" "${dest_files[i]}"
-                ;;
-        esac
-    done
+    case "$action" in
+        sync)
+            sync
+            ;;
+        gather)
+            gather
+            ;;
+        deploy)
+            deploy
+            ;;
+    esac
 
     section "Finish"
     success "Action \"$action\" successful."
@@ -149,43 +105,19 @@ do_action() {
 }
 
 sync() {
-    local loc=$1 # here
-    local rem=$2 # there
-    local rem_dir="$(dirname $rem)"
-    [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
-        success "Created directory $rem_dir."
-    eval "$put_cmd $loc $rem"
-    eval "$get_cmd $rem $loc"
-    success "Synchronized $loc and $rem."
+    eval "$get_cmd $options $dest_dir/ $DOTFILES"
+    eval "$put_cmd $options $DOTFILES/ $dest_dir"
+    success "Synchronized $dest_dir and $DOTFILES."
 }
 
 gather() {
-    local loc=$1 # here
-    local rem=$2 # there
-    [ -e $rem ] && eval "$gather_cmd $rem $loc"
-    success "Gathered $rem to $loc."
+    eval "$gather_cmd $options $dest_dir/ $DOTFILES"
+    success "Gathered $dest_dir to $DOTFILES."
 }
 
 deploy() {
-    local loc=$1 # here
-    local rem=$2 # there
-    local rem_bak="$backup_dir/$(basename $rem)"
-    local rem_dir="$(dirname $rem)"
-    [ ! -d $rem_dir ] && mkdir -p $rem_dir &&
-        success "Created directory $rem_dir"
-    eval "$deploy_cmd $loc $rem"
-    success "Deployed $loc to $rem"
-}
-
-dryrun() {
-    local loc=$1 # here
-    local rem=$2 # there
-    if [ -e $loc ]; then
-        success "$loc found"
-    else
-        fail "$loc not found."
-    fi
-    echo -e "\tmove\t$loc\n\tto\t$rem\n"
+    eval "$deploy_cmd $options $DOTFILES/ $dest_dir"
+    success "Deployed $DOTFILES to $dest_dir"
 }
 
 success () {
@@ -209,5 +141,5 @@ section () {
     printf "\n\t\t=====   %b$1%b   =====\n" $bold $reset
 }
 
-parse_action "$@"
+parse_args "$@"
 do_action
