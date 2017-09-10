@@ -32,12 +32,14 @@ do_gather=true
 do_deploy=true
 action=
 # a = -rlptgoD, u = update via timestamp, hence -t is necessary
-put_cmd="rsync -Cau --no-D -b --backup-dir=$backup_dir"
 get_cmd='rsync -Cau --no-D --ignore-non-existing'
-gather_cmd='rsync -Ca --ignore-non-existing'
-deploy_cmd="rsync -Cab --backup-dir=$backup_dir"
+put_cmd="rsync -Caub --no-D -b --backup-dir=$backup_dir"
+gather_cmd='rsync -Ca --no-D --ignore-non-existing'
+deploy_cmd="rsync -Cab --no-D --backup-dir=$backup_dir"
+add_cmd="rsync -Cau --no-D --ignore-existing"
 dest_dir=$HOME
 options='-v'
+pathspec=''
 
 mkdir -p $log_dir $backup_dir
 #=================================== Logging ===================================
@@ -54,23 +56,34 @@ exec 2> >(tee ${log_prefix}.err.log >&4)
 parse_args() {
     [ -z "$DOTFILES" ] && fail 'DOTFILES not set.'
     section 'User input'
+    # Parse command
     for i in "$@"
     do
         case "$i" in
-            s|-s|--sync)
-                action=sync
+            u|update)
+                action=update
                 ;;
-            g|-g|--gather)
+            g|gather)
                 action=gather
                 ;;
-            d|-d|--deploy)
+            d|deploy)
                 action=deploy
                 ;;
-            *)
+            a|add)
+                action=add
+                ;;
+            s|status)
+                action=status
+                ;;
+            -*)
                 options+=" $i"
+                ;;
+            *)
+                pathspec+=" $i"
                 ;;
         esac
     done
+
     success "Doing action \"$action\" with options:\"$options\"."
 }
 
@@ -81,14 +94,17 @@ do_action() {
     fi
 
     case "$action" in
-        sync)
-            sync
+        update)
+            update
             ;;
         gather)
             gather
             ;;
         deploy)
             deploy
+            ;;
+        add)
+            add
             ;;
     esac
 
@@ -104,7 +120,7 @@ do_action() {
     fi
 }
 
-sync() {
+update() {
     eval "$get_cmd $options $dest_dir/ $DOTFILES"
     eval "$put_cmd $options $DOTFILES/ $dest_dir"
     success "Synchronized $dest_dir and $DOTFILES."
@@ -118,6 +134,15 @@ gather() {
 deploy() {
     eval "$deploy_cmd $options $DOTFILES/ $dest_dir"
     success "Deployed $DOTFILES to $dest_dir"
+}
+
+add() {
+    local src_files=($(realpath $pathspec))
+    for src in ${src_files[@]}; do
+        dest=${src/$dest_dir/$DOTFILES}
+        eval "$add_cmd $options $src $dest"
+        success "Added $src to $dest"
+    done
 }
 
 success () {
