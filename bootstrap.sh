@@ -33,12 +33,12 @@ do_deploy=true
 action=
 # a = -rlptgoD, u = update via timestamp, hence -t is necessary
 filter="-f='. rsync-filter'"
-base_cmd="rsync -Cak --no-D $filter"
-get_cmd="$base_cmd -u --existing"
-put_cmd="$base_cmd -ub --backup-dir=$backup_dir"
-gather_cmd="$base_cmd --existing"
-deploy_cmd="$base_cmd -b --backup-dir=$backup_dir"
-add_cmd="$base_cmd --ignore-existing"
+base_cmd="rsync -Ca --no-D $filter"
+get_cmd="$base_cmd -uk --existing"
+put_cmd="$base_cmd -uKb --backup-dir=$backup_dir"
+gather_cmd="$base_cmd -k --existing"
+deploy_cmd="$base_cmd -Kb --backup-dir=$backup_dir"
+add_cmd="$base_cmd -k --ignore-existing"
 dest_dir=$HOME
 options='-v'
 pathspec=''
@@ -100,12 +100,13 @@ do_action() {
     section "Finish"
     success "Action \"$action\" successful."
     echo "See the logs in $log_dir."
-    if [ -z "$(ls -A $backup_dir)" ]; then
+    if [ -z "$(ls -A "$backup_dir")" ]; then
         success "No backups created in $backup_dir."
     else
         warning "Backups had to be created in $backup_dir. Please check:"
-        local backup_files=($(find $backup_dir -type f))
+        local backup_files=($(find "$backup_dir" -type f))
         printf '%s\n' "${backup_files[@]}"
+        # TODO: print a diff
     fi
 }
 
@@ -126,8 +127,8 @@ deploy() {
 }
 
 add() {
-    local src_files=($(realpath $pathspec))
-    for src in ${src_files[@]}; do
+    local src_files=($(realpath "$pathspec"))
+    for src in "${src_files[@]}"; do
         dest=${src/$dest_dir/$DOTFILES}
         eval "$add_cmd $options $src $dest"
         success "Added $src to $dest"
@@ -135,7 +136,7 @@ add() {
 }
 
 status() {
-    git -C $DOTFILES status
+    git -C "$DOTFILES" status
 }
 
 success () {
