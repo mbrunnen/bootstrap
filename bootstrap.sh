@@ -30,7 +30,10 @@ log_prefix="$log_dir/$(basename "$0")"
 action=
 # a = -rlptgoD, u = update via timestamp, hence -t is necessary
 # -FF: --filter=': /.rsync-filter' --filter='- .rsync-filter'
-base_cmd="rsync -Ca --no-D -FF"
+# Filter in $DOTFILES only applies for this script and .rsync-filter in source
+# directories apply for possibly all rsyncs
+base_cmd='rsync -Ca --no-D'
+base_cmd+=" -FF -f'. $DOTFILES/bootstrap-filter' -f'- bootstrap-filter'"
 get_cmd="$base_cmd -uk --existing"
 put_cmd="$base_cmd -uKb --backup-dir=$backup_dir"
 gather_cmd="$base_cmd -k --existing"
@@ -40,7 +43,7 @@ dest_dir=$HOME
 options='-v'
 pathspec=''
 
-mkdir -p $log_dir $backup_dir
+mkdir -p "$log_dir" "$backup_dir"
 #=================================== Logging ===================================
 
 # Backup stdout(&1) and stderr(&2) to fd 3 and fd 4
@@ -48,9 +51,9 @@ exec 3>&1 4>&2
 # Restore stdout and stderr
 trap 'exec 2>&4 1>&3' 0 1 2 3
 # Use tee to redirect fd 1 to logfile.out and to stdout
-exec 1> >(tee ${log_prefix}.out.log >&3)
+exec 1> >(tee "${log_prefix}.out.log" >&3)
 # Use tee to redirect fd 2 to logfile.err and to stderr
-exec 2> >(tee ${log_prefix}.err.log >&4)
+exec 2> >(tee "${log_prefix}.err.log" >&4)
 
 parse_args() {
     [ -z "$DOTFILES" ] && fail 'DOTFILES not set.'
@@ -104,7 +107,9 @@ do_action() {
         local backup_files=($(find "$backup_dir" -type f))
         printf '%s\n' "${backup_files[@]}"
         if type colordiff >/dev/null 2>&1; then
-           colordiff "$backup_dir" "$DOTFILES" || diff "$backup_dir" "$DOTFILES"
+            colordiff "$backup_dir" "$DOTFILES"
+        else
+            diff "$backup_dir" "$DOTFILES"
         fi
     fi
 }
