@@ -32,8 +32,8 @@ do_gather=true
 do_deploy=true
 action=
 # a = -rlptgoD, u = update via timestamp, hence -t is necessary
-filter="-f='. rsync-filter'"
-base_cmd="rsync -Ca --no-D $filter"
+# -FF: --filter=': /.rsync-filter' --filter='- .rsync-filter'
+base_cmd="rsync -Ca --no-D -FF"
 get_cmd="$base_cmd -uk --existing"
 put_cmd="$base_cmd -uKb --backup-dir=$backup_dir"
 gather_cmd="$base_cmd -k --existing"
