@@ -17,8 +17,8 @@ set -u
 red="\E[91m"
 green="\E[92m"
 yellow="\E[93m"
-blue="\E[94m"
-magenta="\E[95m"
+# blue="\E[94m"
+# magenta="\E[95m"
 cyan="\E[96m"
 reset="\E[0m"
 bold="\E[1m"
@@ -26,10 +26,7 @@ timestamp=$(date +"%s")
 log_dir="/tmp/boostrap_logs_$timestamp"
 # absolute or relative to destination dir
 backup_dir="/tmp/boostrap_backup_$timestamp"
-log_prefix="$log_dir/$(basename $0)"
-do_sync=true
-do_gather=true
-do_deploy=true
+log_prefix="$log_dir/$(basename "$0")"
 action=
 # a = -rlptgoD, u = update via timestamp, hence -t is necessary
 # -FF: --filter=': /.rsync-filter' --filter='- .rsync-filter'
@@ -106,7 +103,9 @@ do_action() {
         warning "Backups had to be created in $backup_dir. Please check:"
         local backup_files=($(find "$backup_dir" -type f))
         printf '%s\n' "${backup_files[@]}"
-        # TODO: print a diff
+        if type colordiff >/dev/null 2>&1; then
+           colordiff "$backup_dir" "$DOTFILES" || diff "$backup_dir" "$DOTFILES"
+        fi
     fi
 }
 
