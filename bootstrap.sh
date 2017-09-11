@@ -32,11 +32,13 @@ do_gather=true
 do_deploy=true
 action=
 # a = -rlptgoD, u = update via timestamp, hence -t is necessary
-get_cmd='rsync -Cau --no-D --ignore-non-existing'
-put_cmd="rsync -Caub --no-D -b --backup-dir=$backup_dir"
-gather_cmd='rsync -Ca --no-D --ignore-non-existing'
-deploy_cmd="rsync -Cab --no-D --backup-dir=$backup_dir"
-add_cmd="rsync -Cau --no-D --ignore-existing"
+filter="-f='. rsync-filter'"
+base_cmd="rsync -Cak --no-D $filter"
+get_cmd="$base_cmd -u --existing"
+put_cmd="$base_cmd -ub --backup-dir=$backup_dir"
+gather_cmd="$base_cmd --existing"
+deploy_cmd="$base_cmd -b --backup-dir=$backup_dir"
+add_cmd="$base_cmd --ignore-existing"
 dest_dir=$HOME
 options='-v'
 pathspec=''
