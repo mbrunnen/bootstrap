@@ -107,9 +107,9 @@ do_action() {
         local backup_files=($(find "$backup_dir" -type f))
         printf '%s\n' "${backup_files[@]}"
         if type colordiff >/dev/null 2>&1; then
-            colordiff "$backup_dir" "$DOTFILES"
+            colordiff -rw "$backup_dir" "$DOTFILES"
         else
-            diff "$backup_dir" "$DOTFILES"
+            diff -rw "$backup_dir" "$DOTFILES"
         fi
     fi
 }
