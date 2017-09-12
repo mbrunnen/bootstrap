@@ -105,12 +105,7 @@ do_action() {
     else
         warning "Backups had to be created in $backup_dir. Please check:"
         local backup_files=($(find "$backup_dir" -type f))
-        printf '%s\n' "${backup_files[@]}"
-        if type colordiff >/dev/null 2>&1; then
-            colordiff -rw "$backup_dir" "$DOTFILES"
-        else
-            diff -rw "$backup_dir" "$DOTFILES"
-        fi
+        diff --color -rw --exclude .git "$backup_dir" "$DOTFILES"
     fi
 }
 
