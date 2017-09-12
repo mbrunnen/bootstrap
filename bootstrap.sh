@@ -17,7 +17,7 @@ set -u
 red="\E[91m"
 green="\E[92m"
 yellow="\E[93m"
-# blue="\E[94m"
+blue="\E[94m"
 # magenta="\E[95m"
 cyan="\E[96m"
 reset="\E[0m"
@@ -99,12 +99,11 @@ do_action() {
 
     section "Finish"
     success "Action \"$action\" successful."
-    echo "See the logs in $log_dir."
+    info "See the logs in $log_dir."
     if [ -z "$(ls -A "$backup_dir")" ]; then
         success "No backups created in $backup_dir."
     else
         warning "Backups had to be created in $backup_dir. Please check:"
-        local backup_files=($(find "$backup_dir" -type f))
         diff --color -rw --exclude .git "$backup_dir" "$DOTFILES"
     fi
 }
@@ -140,6 +139,10 @@ status() {
 
 success () {
     printf "[%bOK%b] $1\n" $green $reset
+}
+
+info () {
+    printf "[%bINFO%b] $1\n" $blue $reset
 }
 
 warning () {
