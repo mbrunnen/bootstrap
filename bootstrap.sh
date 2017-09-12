@@ -110,17 +110,22 @@ do_action() {
     fi
 }
 
+# Synchronize two directories by taking the newest file in case of conflict.
 update() {
     eval "$gather_cmd -u $options $dest_dir/ $DOTFILES"
     eval "$deploy_cmd -u $options $DOTFILES/ $dest_dir"
     success "Synchronized $dest_dir and $DOTFILES."
 }
-
+ 
+# Collect all relevant files to the backup directory and overwrite it with the
+# content from the working directory.
 gather() {
     eval "$gather_cmd $options $dest_dir/ $DOTFILES"
     success "Gathered $dest_dir to $DOTFILES."
 }
 
+# Put all backup files to the working directory and overwrite them. This is
+# useful while installing.
 deploy() {
     eval "$deploy_cmd $options $DOTFILES/ $dest_dir"
     success "Deployed $DOTFILES to $dest_dir"
@@ -140,28 +145,28 @@ status() {
 }
 
 success () {
-    printf "[%bOK%b] $1\n" $green $reset
+    printf "[%bOK%b] $1\n" "$green" "$reset"
 }
 
 info () {
-    printf "[%bINFO%b] $1\n" $blue $reset
+    printf "[%bINFO%b] $1\n" "$blue" "$reset"
 }
 
 warning () {
-    printf "[%bWARNING%b] $1\n" $yellow $reset
+    printf "[%bWARNING%b] $1\n" "$yellow" "$reset"
 }
 
 fail () {
-    printf "[%bFAIL%b] $1\n" $red $reset
+    printf "[%bFAIL%b] $1\n" "$red" "$reset"
     exit
 }
 
 user () {
-    printf "[%bINPUT%b] $1\n" $cyan $reset
+    printf "[%bINPUT%b] $1\n" "$cyan" "$reset"
 }
 
 section () {
-    printf "\n\t\t=====   %b$1%b   =====\n" $bold $reset
+    printf "\n\t\t=====   %b$1%b   =====\n" "$bold" "$reset"
 }
 
 parse_args "$@"
