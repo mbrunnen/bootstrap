@@ -32,7 +32,7 @@ action=
 # -FF: --filter=': /.rsync-filter' --filter='- .rsync-filter'
 # Filter in $DOTFILES only applies for this script and .rsync-filter in source
 # directories apply for possibly all rsyncs
-base_cmd='rsync -Ca --no-D'
+base_cmd='rsync -Ca --no-D -P'
 base_cmd+=" -FF -f'. $DOTFILES/bootstrap-filter' -f'- bootstrap-filter'"
 get_cmd="$base_cmd -uk --existing"
 put_cmd="$base_cmd -uKb --backup-dir=$backup_dir"
@@ -40,7 +40,7 @@ gather_cmd="$base_cmd -k --existing"
 deploy_cmd="$base_cmd -Kb --backup-dir=$backup_dir"
 add_cmd="$base_cmd -k --ignore-existing"
 dest_dir=$HOME
-options='-v'
+options=''
 pathspec=''
 
 mkdir -p "$log_dir" "$backup_dir"
