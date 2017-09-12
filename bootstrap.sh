@@ -32,10 +32,8 @@ action=
 # -FF: --filter=': /.rsync-filter' --filter='- .rsync-filter'
 # Filter in $DOTFILES only applies for this script and .rsync-filter in source
 # directories apply for possibly all rsyncs
-base_cmd='rsync -Ca --no-D -P'
+base_cmd='rsync -Ca --no-D'
 base_cmd+=" -FF -f'. $DOTFILES/bootstrap-filter' -f'- bootstrap-filter'"
-get_cmd="$base_cmd -uk --existing"
-put_cmd="$base_cmd -uKb --backup-dir=$backup_dir"
 gather_cmd="$base_cmd -k --existing"
 deploy_cmd="$base_cmd -Kb --backup-dir=$backup_dir"
 add_cmd="$base_cmd -k --ignore-existing"
@@ -95,7 +93,7 @@ do_action() {
         fail 'No action.'
     fi
 
-    eval $action
+    eval "$action"
 
     section "Finish"
     success "Action \"$action\" successful."
@@ -104,13 +102,17 @@ do_action() {
         success "No backups created in $backup_dir."
     else
         warning "Backups had to be created in $backup_dir. Please check:"
-        diff --color -rw --exclude .git "$backup_dir" "$DOTFILES"
+        if type colordiff >/dev/null 2>&1; then
+            colordiff -rw --exclude .git "$backup_dir" "$DOTFILES"
+        else
+            diff -rw --exclude .git "$backup_dir" "$DOTFILES"
+        fi
     fi
 }
 
 update() {
-    eval "$get_cmd $options $dest_dir/ $DOTFILES"
-    eval "$put_cmd $options $DOTFILES/ $dest_dir"
+    eval "$gather_cmd -u $options $dest_dir/ $DOTFILES"
+    eval "$deploy_cmd -u $options $DOTFILES/ $dest_dir"
     success "Synchronized $dest_dir and $DOTFILES."
 }
 
