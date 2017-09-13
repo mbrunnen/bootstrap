@@ -79,7 +79,7 @@ parse_args() {
                 options+=" $i"
                 ;;
             *)
-                pathspec+=" $i"
+                pathspec+="$i"
                 ;;
         esac
     done
