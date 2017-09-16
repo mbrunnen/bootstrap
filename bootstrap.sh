@@ -135,6 +135,7 @@ add() {
     local src_files=($(realpath -s "$pathspec"))
     for src in "${src_files[@]}"; do
         dest=${src/$dest_dir/$DOTFILES}
+        mkdir -p "$(dirname "$dest")"
         eval "$add_cmd $options $src $dest"
         success "Added $src to $dest"
     done
