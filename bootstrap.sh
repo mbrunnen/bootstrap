@@ -132,7 +132,7 @@ deploy() {
 }
 
 add() {
-    local src_files=($(realpath "$pathspec"))
+    local src_files=($(realpath -s "$pathspec"))
     for src in "${src_files[@]}"; do
         dest=${src/$dest_dir/$DOTFILES}
         eval "$add_cmd $options $src $dest"
