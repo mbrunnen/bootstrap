@@ -21,7 +21,7 @@ blue="\E[94m"
 # magenta="\E[95m"
 cyan="\E[96m"
 reset="\E[0m"
-bold="\E[1m"
+# bold="\E[1m"
 timestamp=$(date +"%s")
 log_dir="/tmp/boostrap_logs_$timestamp"
 # absolute or relative to destination dir
@@ -55,7 +55,7 @@ exec 2> >(tee "${log_prefix}.err.log" >&4)
 
 parse_args() {
     [ -z "$DOTFILES" ] && fail 'DOTFILES not set.'
-    section 'User input'
+    info 'Parsing user input'
     # Parse command
     for i in "$@"
     do
@@ -84,24 +84,21 @@ parse_args() {
         esac
     done
 
-    success "Doing action \"$action\" with options:\"$options\"."
 }
 
 do_action() {
-    section "Action \"$action\""
+    info "Doing action \"$action\" with options:\"$options\" ..."
     if [ -z $action ]; then
         fail 'No action.'
     fi
-
     eval "$action"
 
-    section "Finish"
-    success "Action \"$action\" successful."
     info "See the logs in $log_dir."
+
     if [ -z "$(ls -A "$backup_dir")" ]; then
         success "No backups created in $backup_dir."
     else
-        warning "Backups had to be created in $backup_dir. Please check:"
+        warning "Backups were created in $backup_dir. Please check:"
         if type colordiff >/dev/null 2>&1; then
             colordiff -rw --exclude .git "$backup_dir" "$DOTFILES"
         else
@@ -164,10 +161,6 @@ fail () {
 
 user () {
     printf "[%bINPUT%b] $1\n" "$cyan" "$reset"
-}
-
-section () {
-    printf "\n\t\t=====   %b$1%b   =====\n" "$bold" "$reset"
 }
 
 parse_args "$@"
