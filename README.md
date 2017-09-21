@@ -8,7 +8,7 @@ directory. Inspired by [github's dotfiles guide](https://dotfiles.github.io/).
 
 ### Dotfiles directory
 
-Define in a environment variable `DOTFILES` which holds the path to the
+Define a environment variable `DOTFILES`, which holds the path to the
 dotfiles source directory. I would recommend that this directory is a git
 repository. This directory has to has the same hierarchy as the
 destination directory, i.e. `~/`, e.g.:
@@ -49,4 +49,4 @@ filter rules.
 Every time a home directory file is overwritten, a backup will be created and
 stored in `/tmp/boostrap_backup_<timestamp>`.
 
-A log file will be created in `/tmp/boostrap_logs_<timestamp>`.
+The log files will be created in `/tmp/boostrap_logs_<timestamp>`.
