@@ -21,7 +21,7 @@ destination directory, i.e. `~/`, e.g.:
 ├── .gitconfig
 ├── .tmux.conf
 ├── .zshrc
-└── bootstrap-filter
+└── .bootstrap-filter
 ```
 ### Commands
 
