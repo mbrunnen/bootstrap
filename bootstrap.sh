@@ -38,6 +38,7 @@ gather_cmd="$base_cmd -k --existing"
 deploy_cmd="$base_cmd -Kb --backup-dir=$backup_dir"
 add_cmd="$base_cmd -k --ignore-existing"
 dest_dir=$HOME
+# TODO: make options, pathspec to array
 options=''
 pathspec=''
 
@@ -79,7 +80,7 @@ parse_args() {
                 options+=" $i"
                 ;;
             *)
-                pathspec+="$i"
+                pathspec+=" $i"
                 ;;
         esac
     done
@@ -129,7 +130,7 @@ deploy() {
 }
 
 add() {
-    local src_files=($(realpath -s "$pathspec"))
+    local src_files=($(realpath -s $pathspec))
     for src in "${src_files[@]}"; do
         dest=${src/$dest_dir/$DOTFILES}
         mkdir -p "$(dirname "$dest")"
