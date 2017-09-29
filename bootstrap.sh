@@ -99,6 +99,7 @@ do_action() {
     if [ -z "$(ls -A "$backup_dir")" ]; then
         success "No backups created in $backup_dir."
     else
+        # TODO: improve the output and show changes, filter not existing files
         warning "Backups were created in $backup_dir. Please check:"
         if type colordiff >/dev/null 2>&1; then
             colordiff -rw --exclude .git "$backup_dir" "$DOTFILES"
@@ -130,6 +131,7 @@ deploy() {
 }
 
 add() {
+    # TODO: make pathspec to array
     local src_files=($(realpath -s $pathspec))
     for src in "${src_files[@]}"; do
         dest=${src/$dest_dir/$DOTFILES}
