@@ -33,7 +33,9 @@ action=
 # Filter in $DOTFILES only applies for this script and .rsync-filter in source
 # directories apply for possibly all rsyncs
 base_cmd='rsync -Ca --no-D'
-base_cmd+=" -FF -f'. $DOTFILES/.bootstrap-filter' -f'- .bootstrap-filter'"
+if [ -f "$DOTFILES/.bootstrap-filter" ]; then
+    base_cmd+=" -FF -f'. $DOTFILES/.bootstrap-filter' -f'- .bootstrap-filter'"
+fi
 gather_cmd="$base_cmd -k --existing"
 deploy_cmd="$base_cmd -Kb --backup-dir=$backup_dir"
 add_cmd="$base_cmd -k --ignore-existing"
@@ -112,7 +114,7 @@ update() {
     eval "$deploy_cmd -u $options $DOTFILES/ $dest_dir"
     success "Synchronized $dest_dir and $DOTFILES."
 }
- 
+
 # Collect all relevant files to the backup directory and overwrite it with the
 # content from the working directory.
 gather() {
