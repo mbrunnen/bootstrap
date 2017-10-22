@@ -73,9 +73,6 @@ parse_args() {
             a|add)
                 action=add
                 ;;
-            s|status)
-                action=status
-                ;;
             -*)
                 options+=" $i"
                 ;;
@@ -138,12 +135,10 @@ add() {
         mkdir -p "$(dirname "$dest")"
         eval "$add_cmd $options $src $dest"
         success "Added $src to $dest"
+        git -C "$DOTFILES" add "$dest"
     done
 }
 
-status() {
-    git -C "$DOTFILES" status
-}
 
 success () {
     printf "[%bOK%b] $1\n" "$green" "$reset"
